@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Working Hours Registration</title>
+    <style>
+        .container {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .btn {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Registro horario</h1>
+        <h2 id="timer">00:00:00</h2>
+        <button id="startBtn" class="btn">Iniciar jornada</button>
+        <button id="stopBtn" class="btn">Finalizar jornada</button>
+        <button id="pauseBtn" class="btn">Hacer un descanso</button>
+        <h3 id="totalHours">Total trabajado: 00:00:00</h3>
+
+        <table id="workSessions">
+            <thead>
+                <tr>
+                    <th>Hora de inicio</th>
+                    <th>Hora de finalización</th>
+                    <th>Duración total</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        var startTime;
+        var stopTime;
+        var isTimerRunning = false;
+        var pauseOffset = 0;
+        var timerInterval;
+        var workSessions = [];
+
+        function startTimer() {
+            if (!isTimerRunning) {
+                startTime = new Date().getTime();
+                isTimerRunning = true;
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+        }
+
+        function stopTimer() {
+            if (isTimerRunning) {
+                stopTime = new Date().getTime();
+                isTimerRunning = false;
+                clearInterval(timerInterval);
+                var duration = stopTime - startTime;
+                addWorkSession(startTime, stopTime, duration);
+                updateTotalHours();
+                resetTimer();
+            }
+        }
+
+        function pauseTimer() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                pauseOffset = new Date().getTime() - startTime;
+                isTimerRunning = false;
+                document.getElementById("pauseBtn").innerHTML = "Continuar jornada";
+                document.getElementById("startBtn").disabled = true;
+                document.getElementById("stopBtn").disabled = true;
+            } else {
+                startTime = new Date().getTime() - pauseOffset;
+                isTimerRunning = true;
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+                document.getElementById("pauseBtn").innerHTML = "Hacer descanso";
+                document.getElementById("startBtn").disabled = false;
+                document.getElementById("stopBtn").disabled = false;
+            }
+        }
+
+        function updateTimer() {
+            var currentTime = new Date().getTime();
+            var elapsedMilliseconds = currentTime - startTime;
+
+            var hours = Math.floor(elapsedMilliseconds / 3600000);
+            var minutes = Math.floor((elapsedMilliseconds % 3600000) / 60000);
+            var seconds = Math.floor((elapsedMilliseconds % 60000) / 1000);
+
+            document.getElementById("timer").innerHTML = formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
+        }
+
+        function updateTotalHours() {
+            var totalSeconds = Math.floor(workSessions.reduce(function (acc, session) {
+                return acc + Math.floor(session.duration / 1000);
+            }, 0));
+
+            var hours = Math.floor(totalSeconds / 3600);
+            var minutes = Math.floor((totalSeconds % 3600) / 60);
+            var seconds = totalSeconds % 60;
+
+            document.getElementById("totalHours").innerHTML =
+                "Total Hours: " + formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
+        }
+
+
+        function addWorkSession(startTime, stopTime, duration) {
+            var session = {
+                start: startTime,
+                stop: stopTime,
+                duration: duration
+            };
+
+            workSessions.push(session);
+
+            var sessionTable = document.getElementById("workSessions").getElementsByTagName("tbody")[0];
+            var newRow = sessionTable.insertRow();
+            var startCell = newRow.insertCell(0);
+            var stopCell = newRow.insertCell(1);
+            var durationCell = newRow.insertCell(2);
+
+            startCell.textContent = formatTime(new Date(startTime).getHours()) + ":" + formatTime(new Date(startTime).getMinutes()) + ":" + formatTime(new Date(startTime).getSeconds());
+            stopCell.textContent = formatTime(new Date(stopTime).getHours()) + ":" + formatTime(new Date(stopTime).getMinutes()) + ":" + formatTime(new Date(stopTime).getSeconds());
+            durationCell.textContent = formatDuration(duration);
+        }
+
+        function resetTimer() {
+            startTime = 0;
+            stopTime = 0;
+            pauseOffset = 0;
+            document.getElementById("timer").innerHTML = "00:00:00";
+        }
+
+        function formatTime(time) {
+            return time < 10 ? "0" + time : time;
+        }
+
+        function formatDuration(duration) {
+            var hours = Math.floor(duration / 3600000);
+            var minutes = Math.floor((duration % 3600000) / 60000);
+            var seconds = Math.floor((duration % 60000) / 1000);
+
+            return formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
+        }
+
+        document.getElementById("startBtn").addEventListener("click", startTimer);
+        document.getElementById("stopBtn").addEventListener("click", stopTimer);
+        document.getElementById("pauseBtn").addEventListener("click", pauseTimer);
+    </script>
+</body>
+
+</html>

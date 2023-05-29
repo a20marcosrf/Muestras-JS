@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Proyectos JavaScript</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        .completed {
+            text-decoration: line-through;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Calculadora de Propinas</h1>
+        <div class="form-group">
+            <label for="bill">Total de la factura:</label>
+            <input type="number" class="form-control" id="bill">
+        </div>
+        <div class="form-group">
+            <label for="tip">Porcentaje de propina:</label>
+            <select class="form-control" id="tip">
+                <option value="10">10%</option>
+                <option value="15">15%</option>
+                <option value="20">20%</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="custom-tip">Porcentaje de propina personalizado:</label>
+            <input type="number" class="form-control" id="custom-tip">
+        </div>
+        <button class="btn btn-primary" id="calculate">Calcular</button>
+        <br>
+        <p>Propina: <span id="tip-amount"></span></p>
+        <p>Total de la factura: <span id="total-amount"></span></p>
+
+        <h1>Lista de Tareas</h1>
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" id="task-input" placeholder="Agregar tarea">
+            <div class="input-group-append">
+                <button class="btn btn-primary" id="add-task">Agregar</button>
+            </div>
+        </div>
+        <ul class="list-group" id="task-list"></ul>
+        <button class="btn btn-primary" id="send-tasks">Enviar Tareas</button>
+
+        <h1>Seleccionar País</h1>
+        <select class="form-control" id="country-select"></select>
+
+        <h2>Datos del País:</h2>
+        <p>Nombre: <span id="country-name"></span></p>
+        <p>Capital: <span id="country-capital"></span></p>
+        <p>Región: <span id="country-region"></span></p>
+        <p>Población: <span id="country-population"></span></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script>
+
+        // Código del proyecto de la calculadora de propinas
+        $('#calculate').click(function () {
+            const billAmount = parseFloat($('#bill').val());
+            const tipPercentage = parseFloat($('#custom-tip').val()) || parseFloat($('#tip').val());
+
+            const tipAmount = billAmount * (tipPercentage / 100);
+            const totalAmount = billAmount + tipAmount;
+
+            $('#tip-amount').text(`$${tipAmount.toFixed(2)}`);
+            $('#total-amount').text(`$${totalAmount.toFixed(2)}`);
+        });
+
+        // Código del proyecto de la lista de tareas
+        $('#add-task').click(function () {
+            const taskText = $('#task-input').val().trim();
+
+            if (taskText !== '') {
+                const taskItem = $('<li>');
+                const taskCheckbox = $('<input>').attr('type', 'checkbox');
+                taskCheckbox.on('change', toggleTaskCompletion);
+
+                const taskTextElement = $('<span>').text(taskText);
+
+                const deleteBtn = $('<button>').text('Eliminar');
+                deleteBtn.on('click', deleteTask);
+
+                taskItem.append(taskCheckbox);
+                taskItem.append(taskTextElement);
+                taskItem.append(deleteBtn);
+
+                $('#task-list').append(taskItem);
+                $('#task-input').val('');
+            }
+        });
+
+        function toggleTaskCompletion() {
+            $(this).parent().toggleClass('completed');
+        }
+
+        function deleteTask() {
+            $(this).parent().remove();
+        }
+
+        // Conectarse a la API de REST Countries y llenar el select con los nombres de los países
+        $.ajax({
+            url: 'https://restcountries.com/v3.1/all',
+            method: 'GET',
+            success: function (response) {
+                const countries = response.map(function (country) {
+                    return {
+                        name: country.name.common,
+                        code: country.cca2,
+                        capital: country.capital,
+                        region: country.region,
+                        population: country.population
+                    };
+                });
+
+                countries.forEach(function (country) {
+                    const option = $('<option>').attr('value', country.code).text(country.name);
+                    $('#country-select').append(option);
+                });
+            },
+            error: function () {
+                console.log('Error al cargar los países.');
+            }
+        });
+
+        $('#country-select').change(function () {
+            const selectedCode = $(this).val();
+
+            $.ajax({
+                url: `https://restcountries.com/v3.1/alpha/${selectedCode}`,
+                method: 'GET',
+                success: function (response) {
+                    const country = response[0];
+                    $('#country-name').text(country.name.common);
+                    $('#country-capital').text(country.capital[0]);
+                    $('#country-region').text(country.region);
+                    $('#country-population').text(country.population.toLocaleString());
+                },
+                error: function () {
+                    console.log('Error al obtener los datos del país.');
+                }
+            });
+        });
+
+        $('#send-tasks').click(function () {
+            const tasks = $('#task-list').children().map(function () {
+                const taskText = $(this).find('span').text();
+                const isCompleted = $(this).hasClass('completed');
+
+                return {
+                    text: taskText,
+                    completed: isCompleted
+                };
+            }).get();
+
+            const jsonTasks = JSON.stringify(tasks);
+            console.log(jsonTasks);
+        });
+    </script>
+</body>
+
+</html>
